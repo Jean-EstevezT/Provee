@@ -9,6 +9,7 @@ export interface HistoryItem {
     price: number
     currency: CurrencyCode
     store: string
+    categoryId: string
 
     // ISO string for sorting and separating by days
     date: string

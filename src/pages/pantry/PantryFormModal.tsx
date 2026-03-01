@@ -113,6 +113,7 @@ export default function PantryFormModal({ open, onClose, onSaved, editItem }: Pr
                     price: form.price,
                     currency: form.currency,
                     store: form.store,
+                    categoryId: form.categoryId,
                     date: now,
                 })
             }

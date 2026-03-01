@@ -115,6 +115,7 @@ export default function ShoppingListsPage() {
                 price: item.price,
                 currency: item.currency,
                 store: item.store ?? '',
+                categoryId: item.categoryId,
                 date: now,
             }))
 
