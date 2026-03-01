@@ -104,6 +104,17 @@ export default function PantryFormModal({ open, onClose, onSaved, editItem }: Pr
                     createdAt: now,
                     updatedAt: now,
                 })
+
+                // Also log to history
+                await db.historyItems.add({
+                    name: form.name,
+                    quantity: form.quantity,
+                    unit: form.unit,
+                    price: form.price,
+                    currency: form.currency,
+                    store: form.store,
+                    date: now,
+                })
             }
 
             onSaved()

@@ -92,7 +92,7 @@ export default function ShoppingListsPage() {
         const now = new Date().toISOString()
 
         try {
-            // Prepare pantry items
+            // Prepare pantry and history items
             const newPantryItems = cartItems.map(item => ({
                 name: item.name,
                 quantity: item.quantity,
@@ -108,8 +108,19 @@ export default function ShoppingListsPage() {
                 updatedAt: now,
             }))
 
-            // Add to Alacena
+            const newHistoryItems = cartItems.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                unit: item.unit,
+                price: item.price,
+                currency: item.currency,
+                store: item.store ?? '',
+                date: now,
+            }))
+
+            // Add to Alacena and History
             await db.pantryItems.bulkAdd(newPantryItems)
+            await db.historyItems.bulkAdd(newHistoryItems)
 
             // Delete from Shopping List
             const itemIds = cartItems.map(i => i.id).filter((id): id is number => id !== undefined)
