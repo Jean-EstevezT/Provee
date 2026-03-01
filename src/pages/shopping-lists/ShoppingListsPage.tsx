@@ -14,12 +14,15 @@ import { useAllCategories } from '../../hooks/useAllCategories'
 import { getCurrencySymbol } from '../../data/currencies'
 import type { ShoppingItem } from '../../types/shopping'
 import ShoppingFormModal from './ShoppingFormModal'
+import ConfirmModal from '../../components/ConfirmModal'
 
 export default function ShoppingListsPage() {
     const [search, setSearch] = useState('')
     const [activeCategory, setActiveCategory] = useState<string>('all')
     const [modalOpen, setModalOpen] = useState(false)
     const [editItem, setEditItem] = useState<ShoppingItem | null>(null)
+    const [itemToDelete, setItemToDelete] = useState<number | null>(null)
+    const [confirmTransfer, setConfirmTransfer] = useState(false)
 
     const allCategories = useAllCategories()
     const items = useLiveQuery(() => db.shoppingItems.toArray()) ?? []
@@ -63,10 +66,14 @@ export default function ShoppingListsPage() {
         setModalOpen(true)
     }
 
-    const handleDelete = async (id: number | undefined) => {
-        if (id === undefined) return
-        if (confirm('¿Eliminar este artículo de la lista?')) {
-            await db.shoppingItems.delete(id)
+    const handleDeleteClick = (id: number | undefined) => {
+        if (id !== undefined) setItemToDelete(id)
+    }
+
+    const confirmDelete = async () => {
+        if (itemToDelete !== null) {
+            await db.shoppingItems.delete(itemToDelete)
+            setItemToDelete(null)
         }
     }
 
@@ -76,10 +83,12 @@ export default function ShoppingListsPage() {
     // Use the most common currency in the cart, or first item's currency
     const cartCurrency = cartItems.length > 0 ? cartItems[0].currency : 'USD'
 
-    const handleTransferToPantry = async () => {
-        if (cartItems.length === 0) return
-        if (!confirm(`¿Pasar ${cartItems.length} artículo(s) del carrito a la Alacena?`)) return
+    const handleTransferClick = () => {
+        if (cartItems.length > 0) setConfirmTransfer(true)
+    }
 
+    const executeTransferToPantry = async () => {
+        setConfirmTransfer(false)
         const now = new Date().toISOString()
 
         try {
@@ -105,11 +114,8 @@ export default function ShoppingListsPage() {
             // Delete from Shopping List
             const itemIds = cartItems.map(i => i.id).filter((id): id is number => id !== undefined)
             await db.shoppingItems.bulkDelete(itemIds)
-
-            alert('✅ Artículos transferidos a la Alacena con éxito.')
         } catch (error) {
             console.error('Error al transferir:', error)
-            alert('❌ Ocurrió un error al transferir los artículos.')
         }
     }
 
@@ -214,7 +220,7 @@ export default function ShoppingListsPage() {
                                 <button className="shopping-action-btn" onClick={() => openEdit(item)} aria-label="Editar">
                                     <Pencil size={14} />
                                 </button>
-                                <button className="shopping-action-btn shopping-action-btn--danger" onClick={() => handleDelete(item.id)} aria-label="Eliminar">
+                                <button className="shopping-action-btn shopping-action-btn--danger" onClick={() => handleDeleteClick(item.id)} aria-label="Eliminar">
                                     <Trash2 size={14} />
                                 </button>
                             </div>
@@ -244,7 +250,7 @@ export default function ShoppingListsPage() {
                     {cartItems.length > 0 && (
                         <button
                             className="btn btn--primary btn--sm"
-                            onClick={handleTransferToPantry}
+                            onClick={handleTransferClick}
                             style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', minHeight: '36px' }}
                         >
                             <Share size={16} />
@@ -259,6 +265,26 @@ export default function ShoppingListsPage() {
                 onClose={() => setModalOpen(false)}
                 onSaved={refresh}
                 editItem={editItem}
+            />
+
+            <ConfirmModal
+                open={itemToDelete !== null}
+                title="Eliminar artículo"
+                message="¿Estás seguro de que quieres eliminar este artículo de la lista de compras?"
+                confirmText="Eliminar"
+                isDanger={true}
+                onCancel={() => setItemToDelete(null)}
+                onConfirm={confirmDelete}
+            />
+
+            <ConfirmModal
+                open={confirmTransfer}
+                title="Transferir a Alacena"
+                message={`¿Pasar ${cartItems.length} artículo(s) del carrito a la Alacena de forma permanente?`}
+                confirmText="Transferir"
+                isDanger={false}
+                onCancel={() => setConfirmTransfer(false)}
+                onConfirm={executeTransferToPantry}
             />
         </div>
     )

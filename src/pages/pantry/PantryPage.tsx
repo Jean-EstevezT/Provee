@@ -14,6 +14,7 @@ import { getCurrencySymbol } from '../../data/currencies'
 import { useAllCategories } from '../../hooks/useAllCategories'
 import type { PantryItem } from '../../types/pantry'
 import PantryFormModal from './PantryFormModal'
+import ConfirmModal from '../../components/ConfirmModal'
 
 export default function PantryPage() {
     const [search, setSearch] = useState('')
@@ -21,6 +22,7 @@ export default function PantryPage() {
     const [expandedId, setExpandedId] = useState<number | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [editItem, setEditItem] = useState<PantryItem | null>(null)
+    const [itemToDelete, setItemToDelete] = useState<number | null>(null)
 
     // All categories (defaults + custom from DB)
     const allCategories = useAllCategories()
@@ -72,10 +74,14 @@ export default function PantryPage() {
         setModalOpen(true)
     }
 
-    const handleDelete = async (id: number | undefined) => {
-        if (id === undefined) return
-        if (confirm('¿Eliminar este artículo de la alacena?')) {
-            await db.pantryItems.delete(id)
+    const handleDeleteClick = (id: number | undefined) => {
+        if (id !== undefined) setItemToDelete(id)
+    }
+
+    const confirmDelete = async () => {
+        if (itemToDelete !== null) {
+            await db.pantryItems.delete(itemToDelete)
+            setItemToDelete(null)
         }
     }
 
@@ -203,7 +209,10 @@ export default function PantryPage() {
                                             </button>
                                             <button
                                                 className="btn btn--danger btn--xs"
-                                                onClick={() => handleDelete(item.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    handleDeleteClick(item.id)
+                                                }}
                                             >
                                                 <Trash2 size={14} /> Eliminar
                                             </button>
@@ -222,6 +231,16 @@ export default function PantryPage() {
                 onClose={() => setModalOpen(false)}
                 onSaved={refresh}
                 editItem={editItem}
+            />
+
+            <ConfirmModal
+                open={itemToDelete !== null}
+                title="Eliminar artículo"
+                message="¿Estás seguro de que quieres eliminar este artículo de la alacena? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                isDanger={true}
+                onCancel={() => setItemToDelete(null)}
+                onConfirm={confirmDelete}
             />
         </div>
     )
