@@ -21,12 +21,19 @@ const emptyForm: Omit<ShoppingItem, 'id' | 'createdAt' | 'inCart'> = {
     currency: 'USD',
     categoryId: '',
     brand: '',
+    store: '',
 }
 
 export default function ShoppingFormModal({ open, onClose, onSaved, editItem }: Props) {
     const [form, setForm] = useState(emptyForm)
     const [saving, setSaving] = useState(false)
+    const [stores, setStores] = useState<string[]>([])
     const allCategories = useAllCategories()
+
+    // Load stores from DB for autocomplete
+    useEffect(() => {
+        db.stores.toArray().then((s) => setStores(s.map((x) => x.name)))
+    }, [open])
 
     // Populate form when editing
     useEffect(() => {
@@ -39,6 +46,7 @@ export default function ShoppingFormModal({ open, onClose, onSaved, editItem }: 
                 currency: editItem.currency,
                 categoryId: editItem.categoryId,
                 brand: editItem.brand,
+                store: editItem.store ?? '',
             })
         } else {
             setForm(emptyForm)
@@ -58,9 +66,16 @@ export default function ShoppingFormModal({ open, onClose, onSaved, editItem }: 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!form.name.trim()) return
+        if (form.quantity <= 0) return
+        if (form.price <= 0) return
         setSaving(true)
 
         try {
+            // Save store if new
+            if (form.store?.trim()) {
+                const existing = await db.stores.where('name').equals(form.store.trim()).first()
+                if (!existing) await db.stores.add({ name: form.store.trim() })
+            }
             if (editItem?.id) {
                 await db.shoppingItems.update(editItem.id, { ...form })
             } else {
@@ -176,6 +191,25 @@ export default function ShoppingFormModal({ open, onClose, onSaved, editItem }: 
                             onChange={handleChange}
                             placeholder="Ej: Diana"
                         />
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="sf-store">Tienda</label>
+                        <input
+                            id="sf-store"
+                            name="store"
+                            type="text"
+                            list="sf-stores-list"
+                            autoComplete="off"
+                            value={form.store || ''}
+                            onChange={handleChange}
+                            placeholder="Ej: Walmart"
+                        />
+                        <datalist id="sf-stores-list">
+                            {stores.map((s) => (
+                                <option key={s} value={s} />
+                            ))}
+                        </datalist>
                     </div>
 
                     <div className="form-actions">

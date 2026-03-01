@@ -38,4 +38,12 @@ db.version(4).stores({
     shoppingItems: '++id, name, categoryId, inCart',
 })
 
+db.version(5).stores({
+    pantryItems: '++id, name, categoryId, brand, store, expirationDate, currency',
+    brands: '++id, &name',
+    stores: '++id, &name',
+    categories: 'id, &name',
+    shoppingItems: '++id, name, categoryId, brand, store, inCart',
+})
+
 export { db }

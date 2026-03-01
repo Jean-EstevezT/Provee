@@ -74,6 +74,8 @@ export default function PantryFormModal({ open, onClose, onSaved, editItem }: Pr
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!form.name.trim()) return
+        if (form.quantity <= 0) return
+        if (form.price <= 0) return
         setSaving(true)
 
         const now = new Date().toISOString()
@@ -135,7 +137,7 @@ export default function PantryFormModal({ open, onClose, onSaved, editItem }: Pr
                             autoComplete="off"
                             value={form.name}
                             onChange={handleChange}
-                            placeholder="Ej: Leche entera"
+                            placeholder="Ej: Frijoles negros"
                             required
                         />
                     </div>
@@ -143,16 +145,17 @@ export default function PantryFormModal({ open, onClose, onSaved, editItem }: Pr
                     {/* Quantity + Unit row */}
                     <div className="form-row">
                         <div className="form-group form-group--half">
-                            <label htmlFor="pf-qty">Cantidad</label>
+                            <label htmlFor="pf-qty">Cantidad *</label>
                             <input
                                 id="pf-qty"
                                 name="quantity"
                                 type="number"
                                 autoComplete="off"
-                                min="0"
+                                min="0.01"
                                 step="0.01"
                                 value={form.quantity}
                                 onChange={handleChange}
+                                required
                             />
                         </div>
                         <div className="form-group form-group--half">
@@ -170,7 +173,7 @@ export default function PantryFormModal({ open, onClose, onSaved, editItem }: Pr
                     {/* Price + Currency row */}
                     <div className="form-row">
                         <div className="form-group form-group--half">
-                            <label htmlFor="pf-price">Precio</label>
+                            <label htmlFor="pf-price">Precio *</label>
                             <input
                                 id="pf-price"
                                 name="price"
@@ -180,6 +183,7 @@ export default function PantryFormModal({ open, onClose, onSaved, editItem }: Pr
                                 step="0.01"
                                 value={form.price}
                                 onChange={handleChange}
+                                required
                             />
                         </div>
                         <div className="form-group form-group--half">

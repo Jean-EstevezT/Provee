@@ -7,6 +7,7 @@ import {
     Check,
     Trash2,
     Pencil,
+    Share,
 } from 'lucide-react'
 import { db } from '../../db/db'
 import { useAllCategories } from '../../hooks/useAllCategories'
@@ -75,6 +76,43 @@ export default function ShoppingListsPage() {
     // Use the most common currency in the cart, or first item's currency
     const cartCurrency = cartItems.length > 0 ? cartItems[0].currency : 'USD'
 
+    const handleTransferToPantry = async () => {
+        if (cartItems.length === 0) return
+        if (!confirm(`¿Pasar ${cartItems.length} artículo(s) del carrito a la Alacena?`)) return
+
+        const now = new Date().toISOString()
+
+        try {
+            // Prepare pantry items
+            const newPantryItems = cartItems.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                unit: item.unit,
+                price: item.price,
+                currency: item.currency,
+                categoryId: item.categoryId,
+                brand: item.brand,
+                store: item.store ?? '',
+                expirationDate: '',
+                note: '',
+                createdAt: now,
+                updatedAt: now,
+            }))
+
+            // Add to Alacena
+            await db.pantryItems.bulkAdd(newPantryItems)
+
+            // Delete from Shopping List
+            const itemIds = cartItems.map(i => i.id).filter((id): id is number => id !== undefined)
+            await db.shoppingItems.bulkDelete(itemIds)
+
+            alert('✅ Artículos transferidos a la Alacena con éxito.')
+        } catch (error) {
+            console.error('Error al transferir:', error)
+            alert('❌ Ocurrió un error al transferir los artículos.')
+        }
+    }
+
     return (
         <div className="page-container shopping-page">
             {/* Header */}
@@ -97,7 +135,7 @@ export default function ShoppingListsPage() {
                     name="search"
                     type="text"
                     autoComplete="off"
-                    placeholder="Buscar por nombre o marca…"
+                    placeholder="Buscar por nombre, marca o tienda…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
@@ -162,6 +200,12 @@ export default function ShoppingListsPage() {
                                             <span>{item.brand}</span>
                                         </>
                                     )}
+                                    {item.store && (
+                                        <>
+                                            <span className="shopping-item-dot">·</span>
+                                            <span>{item.store}</span>
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
@@ -188,7 +232,7 @@ export default function ShoppingListsPage() {
                             <span className="cart-bar-badge">{cartItems.length}</span>
                         )}
                     </div>
-                    <div className="cart-bar-info">
+                    <div className="cart-bar-info" style={{ flex: 1 }}>
                         <span className="cart-bar-total">
                             {getCurrencySymbol(cartCurrency)}{cartTotal.toFixed(2)} {cartCurrency}
                         </span>
@@ -196,6 +240,17 @@ export default function ShoppingListsPage() {
                             {cartItems.length} en carrito · {items.length} en lista
                         </span>
                     </div>
+
+                    {cartItems.length > 0 && (
+                        <button
+                            className="btn btn--primary btn--sm"
+                            onClick={handleTransferToPantry}
+                            style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', minHeight: '36px' }}
+                        >
+                            <Share size={16} />
+                            Alacena
+                        </button>
+                    )}
                 </div>
             )}
 
