@@ -12,6 +12,7 @@ import {
 import { db } from '../../db/db'
 import { useAllCategories } from '../../hooks/useAllCategories'
 import { getCurrencySymbol } from '../../data/currencies'
+import { convertCurrency } from '../../utils/currencyUtils'
 import type { ShoppingItem } from '../../types/shopping'
 import ShoppingFormModal from './ShoppingFormModal'
 import ConfirmModal from '../../components/ConfirmModal'
@@ -26,6 +27,7 @@ export default function ShoppingListsPage() {
 
     const allCategories = useAllCategories()
     const items = useLiveQuery(() => db.shoppingItems.toArray()) ?? []
+    const appConfig = useLiveQuery(() => db.appConfig.get(1))
 
     const refresh = useCallback(() => { }, [])
 
@@ -79,9 +81,20 @@ export default function ShoppingListsPage() {
 
     // Cart summary
     const cartItems = items.filter((i) => i.inCart)
-    const cartTotal = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
-    // Use the most common currency in the cart, or first item's currency
-    const cartCurrency = cartItems.length > 0 ? cartItems[0].currency : 'USD'
+
+    // Calculate total dynamically converted
+    const cartTotal = cartItems.reduce((sum, item) => {
+        const itemTotal = item.price * item.quantity
+        if (appConfig) {
+            return sum + convertCurrency(itemTotal, item.currency, appConfig.displayCurrency, appConfig.exchangeRates)
+        }
+        return sum + itemTotal
+    }, 0)
+
+    // Display currency is globally forced, or fallback to first item's
+    const displayCurrency = appConfig
+        ? appConfig.displayCurrency
+        : (cartItems.length > 0 ? cartItems[0].currency : 'USD')
 
     const handleTransferClick = () => {
         if (cartItems.length > 0) setConfirmTransfer(true)
@@ -211,7 +224,18 @@ export default function ShoppingListsPage() {
                                 <div className="shopping-item-meta">
                                     <span>{item.quantity} {item.unit}</span>
                                     <span className="shopping-item-dot">·</span>
-                                    <span>{getCurrencySymbol(item.currency)}{item.price.toFixed(2)}</span>
+                                    <span>
+                                        {appConfig ? (
+                                            <>
+                                                {getCurrencySymbol(appConfig.displayCurrency)}
+                                                {convertCurrency(item.price, item.currency, appConfig.displayCurrency, appConfig.exchangeRates).toFixed(2)}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {getCurrencySymbol(item.currency)}{item.price.toFixed(2)}
+                                            </>
+                                        )}
+                                    </span>
                                     {item.brand && (
                                         <>
                                             <span className="shopping-item-dot">·</span>
@@ -252,7 +276,7 @@ export default function ShoppingListsPage() {
                     </div>
                     <div className="cart-bar-info" style={{ flex: 1 }}>
                         <span className="cart-bar-total">
-                            {getCurrencySymbol(cartCurrency)}{cartTotal.toFixed(2)} {cartCurrency}
+                            {getCurrencySymbol(displayCurrency)}{cartTotal.toFixed(2)} {displayCurrency}
                         </span>
                         <span className="cart-bar-count">
                             {cartItems.length} en carrito · {items.length} en lista

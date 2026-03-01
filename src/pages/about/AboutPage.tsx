@@ -13,6 +13,9 @@ export default function AboutPage() {
                 de forma completamente local. Tus datos nunca salen de tu dispositivo.
             </p>
             <p className="mt-4 text-sm text-slate-500">Versión 0.1.0</p>
+            <p className="mt-2 text-sm text-slate-400 font-medium">
+                Desarrollado por Jean Carlos Estevez
+            </p>
         </div>
     )
 }

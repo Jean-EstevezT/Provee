@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { PiggyBank, Edit3, Save, X, Activity } from 'lucide-react'
 import { db } from '../../db/db'
+import { getCurrencySymbol } from '../../data/currencies'
+import { convertCurrency } from '../../utils/currencyUtils'
 import { getCurrentPeriodBounds, formatPeriodBounds } from '../../utils/dateUtils'
 import type { BudgetPeriod, BudgetConfig } from '../../types/budget'
 
@@ -13,6 +15,9 @@ export default function BudgetPage() {
 
     // Live Query for all history items
     const allHistory = useLiveQuery(() => db.historyItems.toArray()) ?? []
+
+    // Live query: App config
+    const appConfig = useLiveQuery(() => db.appConfig.get(1))
 
     // If there is no config in DB yet, show the setup state
     const isConfigured = !!config
@@ -50,9 +55,20 @@ export default function BudgetPage() {
         return item.date >= bounds.start && item.date <= bounds.end
     })
 
-    const totalSpent = periodHistory.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    const totalSpent = periodHistory.reduce((sum, item) => {
+        const itemTotal = item.price * item.quantity;
+        if (appConfig) {
+            return sum + convertCurrency(itemTotal, item.currency, appConfig.displayCurrency, appConfig.exchangeRates)
+        }
+        return sum + itemTotal
+    }, 0)
+
     const budgetAmount = config?.amount ?? 0
     const remaining = Math.max(0, budgetAmount - totalSpent)
+
+    // Determine the Currency format for display
+    const displayCurrency = appConfig ? appConfig.displayCurrency : 'USD'
+    const symbol = getCurrencySymbol(displayCurrency)
 
     // Progress calculation
     const progressPercentage = budgetAmount > 0
@@ -151,13 +167,13 @@ export default function BudgetPage() {
                         <div className="glass-panel" style={{ padding: '1.25rem' }}>
                             <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Gastado</span>
                             <div style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '0.25rem', color: 'var(--color-text)' }}>
-                                ${totalSpent.toFixed(2)}
+                                {symbol}{totalSpent.toFixed(2)}
                             </div>
                         </div>
                         <div className="glass-panel" style={{ padding: '1.25rem' }}>
                             <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Restante</span>
                             <div style={{ fontSize: '1.5rem', fontWeight: 700, marginTop: '0.25rem', color: progressPercentage >= 100 ? 'var(--color-danger)' : 'var(--color-primary)' }}>
-                                ${remaining.toFixed(2)}
+                                {symbol}{remaining.toFixed(2)}
                             </div>
                         </div>
                     </div>
@@ -165,7 +181,7 @@ export default function BudgetPage() {
                     {/* Progress Bar */}
                     <div className="glass-panel" style={{ padding: '1.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                            <span style={{ fontWeight: 600 }}>Presupuesto Total: ${budgetAmount.toFixed(2)}</span>
+                            <span style={{ fontWeight: 600 }}>Presupuesto Total: {symbol}{budgetAmount.toFixed(2)}</span>
                             <span style={{ color: progressColor, fontWeight: 700 }}>{progressPercentage.toFixed(1)}%</span>
                         </div>
                         <div style={{

@@ -2,18 +2,30 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Receipt, TrendingUp, Store as StoreIcon, PieChart } from 'lucide-react'
 import { db } from '../../db/db'
 import { getCurrencySymbol } from '../../data/currencies'
+import { convertCurrency } from '../../utils/currencyUtils'
 import { useAllCategories } from '../../hooks/useAllCategories'
 
 export default function ExpensesPage() {
     const allHistory = useLiveQuery(() => db.historyItems.toArray()) ?? []
     const allCategories = useAllCategories()
+    const appConfig = useLiveQuery(() => db.appConfig.get(1))
 
     // 1. Calculate General Total
-    const totalSpent = allHistory.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    const totalSpent = allHistory.reduce((sum, item) => {
+        const cost = item.price * item.quantity
+        if (appConfig) {
+            return sum + convertCurrency(cost, item.currency, appConfig.displayCurrency, appConfig.exchangeRates)
+        }
+        return sum + cost
+    }, 0)
 
     // 2. Group by Category
     const categoryStats = allHistory.reduce((acc, item) => {
-        const cost = item.price * item.quantity
+        let cost = item.price * item.quantity
+        if (appConfig) {
+            cost = convertCurrency(cost, item.currency, appConfig.displayCurrency, appConfig.exchangeRates)
+        }
+
         if (!acc[item.categoryId]) {
             acc[item.categoryId] = 0
         }
@@ -37,7 +49,11 @@ export default function ExpensesPage() {
     // 3. Group by Store
     const storeStats = allHistory.reduce((acc, item) => {
         const storeName = (item.store && item.store.trim() !== '') ? item.store : 'Otra Tienda'
-        const cost = item.price * item.quantity
+        let cost = item.price * item.quantity
+        if (appConfig) {
+            cost = convertCurrency(cost, item.currency, appConfig.displayCurrency, appConfig.exchangeRates)
+        }
+
         if (!acc[storeName]) {
             acc[storeName] = 0
         }
@@ -49,9 +65,9 @@ export default function ExpensesPage() {
         .map(([name, amount]) => ({ name, amount }))
         .sort((a, b) => b.amount - a.amount)
 
-    // Determine base currency for Display (take the first item's currency, fallback to USD)
-    const baseCurrency = allHistory.length > 0 ? allHistory[0].currency : 'USD'
-    const currencySymbol = getCurrencySymbol(baseCurrency)
+    // Determine base currency for Display
+    const displayCurrency = appConfig ? appConfig.displayCurrency : (allHistory.length > 0 ? allHistory[0].currency : 'USD')
+    const currencySymbol = getCurrencySymbol(displayCurrency)
 
     return (
         <div className="page-container config-page">

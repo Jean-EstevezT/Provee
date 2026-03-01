@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { db } from '../../db/db'
 import { getCurrencySymbol } from '../../data/currencies'
+import { convertCurrency } from '../../utils/currencyUtils'
 import { useAllCategories } from '../../hooks/useAllCategories'
 import type { PantryItem } from '../../types/pantry'
 import PantryFormModal from './PantryFormModal'
@@ -29,6 +30,9 @@ export default function PantryPage() {
 
     // Live query: all pantry items
     const items = useLiveQuery(() => db.pantryItems.toArray()) ?? []
+
+    // Live query: App config
+    const appConfig = useLiveQuery(() => db.appConfig.get(1))
 
     // Refresh helper (useLiveQuery auto-refreshes, but we call it after save)
     const refresh = useCallback(() => {
@@ -181,7 +185,18 @@ export default function PantryPage() {
                                     <div className="pantry-item-details">
                                         <div className="detail-grid">
                                             <span className="detail-label">Precio</span>
-                                            <span className="detail-value">{getCurrencySymbol(item.currency)}{item.price.toFixed(2)} {item.currency}</span>
+                                            <span className="detail-value">
+                                                {appConfig ? (
+                                                    <>
+                                                        {getCurrencySymbol(appConfig.displayCurrency)}
+                                                        {convertCurrency(item.price, item.currency, appConfig.displayCurrency, appConfig.exchangeRates).toFixed(2)} {appConfig.displayCurrency}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {getCurrencySymbol(item.currency)}{item.price.toFixed(2)} {item.currency}
+                                                    </>
+                                                )}
+                                            </span>
 
                                             <span className="detail-label">Categoría</span>
                                             <span className="detail-value">{getCategoryName(item.categoryId)}</span>

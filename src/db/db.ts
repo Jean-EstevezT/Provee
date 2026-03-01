@@ -4,6 +4,7 @@ import type { ShoppingItem } from '../types/shopping'
 import type { Category } from '../data/categories'
 import type { HistoryItem } from '../types/history'
 import type { BudgetConfig } from '../types/budget'
+import type { AppConfig } from '../types/config'
 
 const db = new Dexie('ProveeDB') as Dexie & {
     pantryItems: EntityTable<PantryItem, 'id'>
@@ -13,6 +14,7 @@ const db = new Dexie('ProveeDB') as Dexie & {
     shoppingItems: EntityTable<ShoppingItem, 'id'>
     historyItems: EntityTable<HistoryItem, 'id'>
     budgetConfig: EntityTable<BudgetConfig, 'id'>
+    appConfig: EntityTable<AppConfig, 'id'>
 }
 
 db.version(1).stores({
@@ -67,6 +69,17 @@ db.version(7).stores({
     shoppingItems: '++id, name, categoryId, brand, store, inCart',
     historyItems: '++id, date',
     budgetConfig: '++id',
+})
+
+db.version(8).stores({
+    pantryItems: '++id, name, categoryId, brand, store, expirationDate, currency',
+    brands: '++id, &name',
+    stores: '++id, &name',
+    categories: 'id, &name',
+    shoppingItems: '++id, name, categoryId, brand, store, inCart',
+    historyItems: '++id, date',
+    budgetConfig: '++id',
+    appConfig: '++id',
 })
 
 export { db }
