@@ -114,8 +114,8 @@ export default function PantryFormModal({ open, onClose, onSaved, editItem }: Pr
     if (!open) return null
 
     return (
-        <div className="modal-overlay" onMouseDown={onClose}>
-            <div className="modal-content" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+            <div className="modal-content">
                 {/* Header */}
                 <div className="modal-header">
                     <h2>{editItem ? 'Editar artículo' : 'Nuevo artículo'}</h2>

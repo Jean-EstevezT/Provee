@@ -106,7 +106,10 @@ export default function PantryPage() {
             <div className="search-bar">
                 <Search size={18} className="search-bar-icon" />
                 <input
+                    id="pantry-search"
+                    name="search"
                     type="text"
+                    autoComplete="off"
                     placeholder="Buscar por nombre, marca o tienda…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}

@@ -55,8 +55,8 @@ export default function CategoryFormModal({ open, onClose, onSaved }: Props) {
     if (!open) return null
 
     return (
-        <div className="modal-overlay" onMouseDown={onClose}>
-            <div className="modal-content" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+            <div className="modal-content">
                 <div className="modal-header">
                     <h2>Nueva categoría</h2>
                     <button className="modal-close-btn" onClick={onClose} aria-label="Cerrar">

@@ -93,7 +93,10 @@ export default function ShoppingListsPage() {
             <div className="search-bar">
                 <Search size={18} className="search-bar-icon" />
                 <input
+                    id="shopping-search"
+                    name="search"
                     type="text"
+                    autoComplete="off"
                     placeholder="Buscar por nombre o marca…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}

@@ -1171,15 +1171,20 @@ body {
   max-width: 480px;
   max-height: 95dvh;
   background: var(--color-bg-elevated);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   overflow-y: auto;
   overflow-x: hidden;
   box-shadow: var(--shadow-elevated);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop: add glass effect back */
+@media (hover: hover) and (pointer: fine) {
+  .modal-content {
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
 }
 
 @media (min-width: 640px) {
@@ -1293,6 +1298,9 @@ body {
   max-width: 100%;
   padding: 0.75rem 0.85rem;
   min-height: 50px;
+  touch-action: manipulation;
+  user-select: auto;
+  -webkit-user-select: auto;
   background: rgba(10, 10, 10, 0.6);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -1302,14 +1310,6 @@ body {
   outline: none;
   box-sizing: border-box;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-/* Style the option elements inside selects */
-.form-group select option {
-  background: #1a1a1a;
-  color: var(--color-text-primary);
-  padding: 0.5rem;
-  font-size: 16px;
 }
 
 .form-group input:focus,
@@ -1322,6 +1322,9 @@ body {
 .form-group select {
   cursor: pointer;
   text-overflow: ellipsis;
+  /* Override Tailwind preflight to ensure native picker works on mobile */
+  appearance: auto;
+  -webkit-appearance: menulist;
 }
 
 /* Desktop only: custom arrow + appearance override */
